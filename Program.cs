@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
-
+using System;
 namespace RayCasting;
 
 class World
@@ -11,7 +11,7 @@ class World
 
     public World() 
     { 
-        m_Map = new byte[64] {
+        m_Map = [
             1, 1, 1, 1, 1, 1, 1, 1,
             1, 0, 0, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 0, 0, 0, 1,
@@ -20,10 +20,10 @@ class World
             1, 0, 0, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 0, 0, 0, 1,
             1, 1, 1, 1, 1, 1, 1, 1,
-        }; 
+        ]; 
     }
     /* TODO(true)
-        Remove those dynamic allocations to outside the loop
+        Remove those dynamic allocations to outside the main loop
     */
     public void Draw()
     {
@@ -50,10 +50,76 @@ class World
         DrawLineEx(lineStart, lineEnd, 4.0f, Color.Black );
     }
 
-    public bool HitWall(Vector2 postion)
+    public bool HitWall(Vector2 position)
     {
-        //todo
-        return true;
+        int x = (int) (position.X / TILE_SIZE);
+        int y = (int) (position.Y / TILE_SIZE);
+        if(x > 8 || y > 8)
+        {
+            return true;
+        }
+        return m_Map[x + y*8] == 1;
+    }
+}
+
+class Segment(float x, float y, float angle)
+{
+    Vector2 m_Position = new(x, y);
+    float m_Angle = angle;
+    float m_Size = 50f;
+    Vector2 m_EndPoint = new(x, y);
+    public void Draw()
+    {
+        Vector2 endPosition = new(m_Position.X + (float)Math.Cos(m_Angle)*m_Size, m_Position.Y + (float)Math.Sin(m_Angle)*m_Size);
+        DrawLineEx(m_Position, endPosition, 2.0f, Color.Green);
+    }
+
+    public void Update()
+    {
+        if(IsKeyDown(KeyboardKey.Left)) {m_Angle -= 0.1f;}
+        if(IsKeyDown(KeyboardKey.Right)) {m_Angle += 0.1f;}
+    }
+
+    public void Cast(World world)
+    {
+        
+    }
+
+}
+
+class Point(float x, float y)
+{
+    private Vector2 m_Position = new(x, y);
+
+    public void Draw()
+    {
+        DrawCircleV(m_Position, 7.0f, Color.Green);
+    }
+    public void Update()
+    {
+        if(IsKeyDown(KeyboardKey.Left))
+        {
+            m_Position.X -= 0.1f;
+        }
+        if(IsKeyDown(KeyboardKey.Right))
+        {
+            m_Position.X += 0.1f;
+        }
+        if(IsKeyDown(KeyboardKey.Up))
+        {
+            m_Position.Y -= 0.1f;
+        }
+        if(IsKeyDown(KeyboardKey.Down))
+        {
+            m_Position.Y += 0.1f;
+        }
+        
+    }
+    public void Hit(World world)
+    {
+        float x = m_Position.X;
+        float y = m_Position.Y;
+        Console.WriteLine($"Point({x},{y}) hit? {world.HitWall(m_Position)}");
     }
 }
 
@@ -65,13 +131,17 @@ public class Program
         const int screenHeight = 512;
 
         InitWindow(screenWidth, screenHeight, "RayCastingEngine");
+        SetTargetFPS(60);
         World world = new();
+        Segment ray = new(screenWidth/4.0f, screenHeight/2.0f, 3.1415f);
         while(!WindowShouldClose())
         {
+            ray.Update();
             BeginDrawing();
             ClearBackground(Color.Gray);
-
             world.Draw();
+            
+            ray.Draw();
             EndDrawing();
         }
         CloseWindow();
